@@ -148,6 +148,32 @@ public:
     void generate_r1cs_witness();
 };
 
+template<typename ppT>
+class G1_scalar_mul_gadget : public gadget<libff::Fr<ppT> > {
+public:
+    typedef libff::Fr<ppT> FieldT;
+
+    std::vector<G1_variable<ppT> > terms;
+    std::vector<G1_variable<ppT> > partial_sums;
+    std::vector<G1_add_gadget<ppT> > adders;
+
+    G1_variable<ppT> identity;
+    pb_variable_array<FieldT> scalars;
+    std::vector<G1_variable<ppT>> powers;
+    G1_variable<ppT> result;
+
+    const size_t scalar_size;
+
+    G1_scalar_mul_gadget(protoboard<FieldT> &pb,
+                              const G1_variable<ppT> &identity,
+                              const pb_variable_array<FieldT> &scalars,
+                              const std::vector<G1_variable<ppT> > &powers,
+                              const G1_variable<ppT> &result,
+                              const std::string &annotation_prefix);
+    void generate_r1cs_constraints();
+    void generate_r1cs_witness();
+};
+
 } // libsnark
 
 #include <libsnark/gadgetlib1/gadgets/curves/weierstrass_g1_gadget.tcc>

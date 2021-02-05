@@ -321,6 +321,80 @@ void G1_multiscalar_mul_gadget<ppT>::generate_r1cs_witness()
     }
 }
 
+template<typename ppT>
+G1_scalar_mul_gadget<ppT>::G1_scalar_mul_gadget(protoboard<FieldT> &pb,
+                                              const G1_variable<ppT> &identity,
+                                              const pb_variable_array<FieldT> &scalars,
+                                              const std::vector<G1_variable<ppT> > &powers,
+                                            const G1_variable<ppT>&result,
+                                            const std::string &annotation_prefix) :
+    gadget<FieldT>(pb, annotation_prefix),
+    identity(identity),
+    scalars(scalars),
+    powers(powers),
+    result(result),
+    scalar_size(scalars.size())
+{
+    assert(scalar_size == powers.size());
+    partial_sums.emplace_back(identity);
+    for (size_t i = 0; i < scalar_size; ++i)
+    {
+        terms.emplace_back(G1_variable<ppT>(pb, FMT(annotation_prefix, " term_%zu")));
+        if (i < scalar_size-1)
+        {
+            partial_sums.emplace_back(G1_variable<ppT>(pb, FMT(annotation_prefix, " partial_sum_%zu")));
+        }
+        else
+        {
+            partial_sums.emplace_back(result);
+        }
+
+        adders.emplace_back(G1_add_gadget<ppT>(pb, partial_sums[i], terms[i], partial_sums[i + 1], FMT(annotation_prefix, " adders_%zu")));
+    }
+}
+
+template<typename ppT>
+void G1_scalar_mul_gadget<ppT>::generate_r1cs_constraints()
+{
+    for (size_t i = 0; i < scalar_size; ++i)
+    {
+        adders[i].generate_r1cs_constraints();
+
+        /*
+         * What about this - does the multiplication here make sense?  Only if the identity point is (0,0) - it should be (0,1)
+         * partial_sums[0] = identity (zero)
+         * partial_sums[i + 1] = partial_sums[i] + scalar[i] * power[i]
+         * partial_sums[i + 1] - partial_sums[i] = power[i] * scalar[i]
+         * r1cs (power[i].X, scalar[i], term[i].X)
+         * r1cs (power[i].Y - 1, scalar[i], term[i].Y - 1) // The -1 makes scalar = 0 -> term = 1
+         * add_gadget(partial_sums[i], term[i], partial_sums[i+1])
+         * partial_sums[n] = result
+         */
+
+        this->pb.add_r1cs_constraint(r1cs_constraint<FieldT>(scalars[i], powers[i].X,
+                                                             terms[i].X),
+                                     FMT(this->annotation_prefix, " term_%zu_X", i+1));
+        this->pb.add_r1cs_constraint(r1cs_constraint<FieldT>(scalars[i],
+                                                             powers[i].Y - 1,
+                                                             terms[i].Y - 1),
+                                     FMT(this->annotation_prefix, " term_%zu_Y", i+1));
+    }
+}
+
+template<typename ppT>
+void G1_scalar_mul_gadget<ppT>::generate_r1cs_witness()
+{
+    assert(scalar_size == terms.size());
+    for (size_t i = 0; i < scalar_size; ++i)
+    {
+        this->pb.lc_val(terms[i].X) = (this->pb.val(scalars[i]) == libff::Fr<ppT>::zero() ? this->pb.lc_val(0) : this->pb.lc_val(powers[i].X) );
+        this->pb.lc_val(terms[i].Y) = (this->pb.val(scalars[i]) == libff::Fr<ppT>::zero() ? this->pb.lc_val(1) : this->pb.lc_val(powers[i].Y));
+    }
+    for (size_t i = 0; i < adders.size(); ++i) {
+        adders[i].generate_r1cs_witness();
+    }
+}
+
 } // libsnark
 
 #endif // WEIERSTRASS_G1_GADGET_TCC_
