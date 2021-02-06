@@ -157,16 +157,14 @@ public:
     std::vector<G1_variable<ppT> > chosen_results;
     std::vector<G1_add_gadget<ppT> > adders;
 
-    G1_variable<ppT> identity;
-    pb_variable_array<FieldT> scalars;
-    std::vector<G1_variable<ppT>> powers;
-    G1_variable<ppT> result;
+    const pb_variable_array<FieldT> &scalars;
+    const G1_variable<ppT> &result;
 
     const size_t scalar_size;
 
     G1_scalar_mul_gadget(protoboard<FieldT> &pb,
                               const G1_variable<ppT> &identity,
-                              const pb_variable_array<FieldT> &scalars,
+                              const pb_variable_array<FieldT> &scalars_i,
                               const std::vector<G1_variable<ppT> > &powers,
                               const G1_variable<ppT> &result,
                               const std::string &annotation_prefix);

@@ -324,34 +324,25 @@ void G1_multiscalar_mul_gadget<ppT>::generate_r1cs_witness()
 template<typename ppT>
 G1_scalar_mul_gadget<ppT>::G1_scalar_mul_gadget(protoboard<FieldT> &pb,
                                               const G1_variable<ppT> &identity,
-                                              const pb_variable_array<FieldT> &scalars,
+                                              const pb_variable_array<FieldT> &scalars_i,
                                               const std::vector<G1_variable<ppT> > &powers,
                                             const G1_variable<ppT>&result,
                                             const std::string &annotation_prefix) :
-    gadget<FieldT>(pb, annotation_prefix),
-    identity(identity),
-    scalars(scalars),
-    powers(powers),
-    result(result),
-    scalar_size(scalars.size())
-{
-    assert(scalar_size == powers.size());
-    // base??
-    chosen_results.emplace_back(identity);
-    for (size_t i = 0; i < scalar_size; ++i)
+    gadget<FieldT>(pb, annotation_prefix), scalars(scalars_i), result(result), scalar_size(scalars_i.size())
     {
-        computed_results.emplace_back(G1_variable<ppT>(pb, FMT(annotation_prefix, " computed_results_%zu")));
-        if (i < scalar_size-1)
-        {
-            chosen_results.emplace_back(G1_variable<ppT>(pb, FMT(annotation_prefix, " chosen_results_%zu")));
-        }
-        else
-        {
-            chosen_results.emplace_back(result);
-        }
+        assert(scalar_size == powers.size());
+        chosen_results.emplace_back(identity);
+        for (size_t i = 0; i < scalar_size; ++i) {
+            computed_results.emplace_back(G1_variable<ppT>(pb, FMT(annotation_prefix, " computed_results_%zu")));
+            if (i < scalar_size - 1) {
+                chosen_results.emplace_back(G1_variable<ppT>(pb, FMT(annotation_prefix, " chosen_results_%zu")));
+            } else {
+                chosen_results.emplace_back(result);
+            }
 
-        adders.emplace_back(G1_add_gadget<ppT>(pb, chosen_results[i], powers[i], computed_results[i], FMT(annotation_prefix, " adders_%zu")));
-    }
+            adders.emplace_back(G1_add_gadget<ppT>(pb, chosen_results[i], powers[i], computed_results[i],
+                                                   FMT(annotation_prefix, " adders_%zu")));
+        }
 }
 
 template<typename ppT>
