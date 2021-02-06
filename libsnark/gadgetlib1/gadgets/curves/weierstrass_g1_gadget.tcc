@@ -340,10 +340,10 @@ G1_scalar_mul_gadget<ppT>::G1_scalar_mul_gadget(protoboard<FieldT> &pb,
     chosen_results.emplace_back(identity);
     for (size_t i = 0; i < scalar_size; ++i)
     {
-        computed_results.emplace_back(G1_variable<ppT>(pb, FMT(annotation_prefix, " term_%zu")));
+        computed_results.emplace_back(G1_variable<ppT>(pb, FMT(annotation_prefix, " computed_results_%zu")));
         if (i < scalar_size-1)
         {
-            chosen_results.emplace_back(G1_variable<ppT>(pb, FMT(annotation_prefix, " partial_sum_%zu")));
+            chosen_results.emplace_back(G1_variable<ppT>(pb, FMT(annotation_prefix, " chosen_results_%zu")));
         }
         else
         {
