@@ -336,20 +336,21 @@ G1_scalar_mul_gadget<ppT>::G1_scalar_mul_gadget(protoboard<FieldT> &pb,
     scalar_size(scalars.size())
 {
     assert(scalar_size == powers.size());
-    partial_sums.emplace_back(identity);
+    // base??
+    chosen_results.emplace_back(identity);
     for (size_t i = 0; i < scalar_size; ++i)
     {
-        terms.emplace_back(G1_variable<ppT>(pb, FMT(annotation_prefix, " term_%zu")));
+        computed_results.emplace_back(G1_variable<ppT>(pb, FMT(annotation_prefix, " term_%zu")));
         if (i < scalar_size-1)
         {
-            partial_sums.emplace_back(G1_variable<ppT>(pb, FMT(annotation_prefix, " partial_sum_%zu")));
+            chosen_results.emplace_back(G1_variable<ppT>(pb, FMT(annotation_prefix, " partial_sum_%zu")));
         }
         else
         {
-            partial_sums.emplace_back(result);
+            chosen_results.emplace_back(result);
         }
 
-        adders.emplace_back(G1_add_gadget<ppT>(pb, partial_sums[i], terms[i], partial_sums[i + 1], FMT(annotation_prefix, " adders_%zu")));
+        adders.emplace_back(G1_add_gadget<ppT>(pb, chosen_results[i], powers[i], computed_results[i], FMT(annotation_prefix, " adders_%zu")));
     }
 }
 
@@ -369,29 +370,69 @@ void G1_scalar_mul_gadget<ppT>::generate_r1cs_constraints()
          * r1cs (power[i].Y - 1, scalar[i], term[i].Y - 1) // The -1 makes scalar = 0 -> term = 1
          * add_gadget(partial_sums[i], term[i], partial_sums[i+1])
          * partial_sums[n] = result
+         *
+         * So basically it fails because it adds 0 + 0 if the first bit is zero but that's a double.
          */
 
-        this->pb.add_r1cs_constraint(r1cs_constraint<FieldT>(scalars[i], powers[i].X,
+
+        /*
+         * Let's figure out how the multiscalar multiplication works:
+         chosen_results[i+1].X = scalars[i] * computed_results[i].X + (1-scalars[i]) *  chosen_results[i].X
+         chosen_results[i+1].X - chosen_results[i].X = scalars[i] * (computed_results[i].X - chosen_results[i].X)
+         The second equation is just a rearrangement of the first
+         The first says
+         if (scalars[i]) {
+            chosen_results[i + 1] = computed_results[i]
+         } else {
+            chosen_results[i+1] = chosen_results[i]
+         }
+         So if the bit is 1, we use computed_results[i], otherwise we leave chosen_results unchanged
+
+         The addder means that
+
+         chosen_results[i] + powers[i] = computed_results[i]
+
+         so we have
+
+         if (scalars[i]) {
+            chosen_results[i + 1] = powers[i] + computed_results[i]
+         } else {
+            chosen_results[i+1] = chosen_results[i]
+         }
+
+         so we are indeed choosing to add or not add powers[i] based on the scalar.
+         If something is not chosen, however, we set it equal rather than adding zero.
+
+       */
+
+        /* this->pb.add_r1cs_constraint(r1cs_constraint<FieldT>(scalars[i], powers[i].X,
                                                              terms[i].X),
                                      FMT(this->annotation_prefix, " term_%zu_X", i+1));
         this->pb.add_r1cs_constraint(r1cs_constraint<FieldT>(scalars[i],
                                                              powers[i].Y - 1,
                                                              terms[i].Y - 1),
                                      FMT(this->annotation_prefix, " term_%zu_Y", i+1));
+        */
+
+        this->pb.add_r1cs_constraint(r1cs_constraint<FieldT>(scalars[i],
+                                                             computed_results[i].X - chosen_results[i].X,
+                                                             chosen_results[i+1].X - chosen_results[i].X),
+                                     FMT(this->annotation_prefix, " chosen_results_%zu_X", i+1));
+        this->pb.add_r1cs_constraint(r1cs_constraint<FieldT>(scalars[i],
+                                                             computed_results[i].Y - chosen_results[i].Y,
+                                                             chosen_results[i+1].Y - chosen_results[i].Y),
+                                     FMT(this->annotation_prefix, " chosen_results_%zu_Y", i+1));
     }
 }
 
 template<typename ppT>
 void G1_scalar_mul_gadget<ppT>::generate_r1cs_witness()
 {
-    assert(scalar_size == terms.size());
     for (size_t i = 0; i < scalar_size; ++i)
     {
-        this->pb.lc_val(terms[i].X) = (this->pb.val(scalars[i]) == libff::Fr<ppT>::zero() ? this->pb.lc_val(0) : this->pb.lc_val(powers[i].X) );
-        this->pb.lc_val(terms[i].Y) = (this->pb.val(scalars[i]) == libff::Fr<ppT>::zero() ? this->pb.lc_val(1) : this->pb.lc_val(powers[i].Y));
-    }
-    for (size_t i = 0; i < adders.size(); ++i) {
         adders[i].generate_r1cs_witness();
+        this->pb.lc_val(chosen_results[i+1].X) = (this->pb.val(scalars[i]) == libff::Fr<ppT>::zero() ? this->pb.lc_val(chosen_results[i].X) : this->pb.lc_val(computed_results[i].X));
+        this->pb.lc_val(chosen_results[i+1].Y) = (this->pb.val(scalars[i]) == libff::Fr<ppT>::zero() ? this->pb.lc_val(chosen_results[i].Y) : this->pb.lc_val(computed_results[i].Y));
     }
 }
 

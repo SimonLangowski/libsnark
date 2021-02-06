@@ -153,8 +153,8 @@ class G1_scalar_mul_gadget : public gadget<libff::Fr<ppT> > {
 public:
     typedef libff::Fr<ppT> FieldT;
 
-    std::vector<G1_variable<ppT> > terms;
-    std::vector<G1_variable<ppT> > partial_sums;
+    std::vector<G1_variable<ppT> > computed_results;
+    std::vector<G1_variable<ppT> > chosen_results;
     std::vector<G1_add_gadget<ppT> > adders;
 
     G1_variable<ppT> identity;
