@@ -153,6 +153,8 @@ class G1_scalar_mul_gadget : public gadget<libff::Fr<ppT> > {
 public:
     typedef libff::Fr<ppT> FieldT;
 
+    std::vector<G1_dbl_gadget<ppT> > doublers;
+    std::vector<G1_variable<ppT> > computed_powers;
     std::vector<G1_variable<ppT> > computed_results;
     std::vector<G1_variable<ppT> > chosen_results;
     std::vector<G1_add_gadget<ppT> > adders;
@@ -162,12 +164,20 @@ public:
 
     const size_t scalar_size;
 
+    // Used when the powers are constants or shared and only need to be check once
     G1_scalar_mul_gadget(protoboard<FieldT> &pb,
                               const G1_variable<ppT> &identity,
                               const pb_variable_array<FieldT> &scalars_i,
-                              const std::vector<G1_variable<ppT> > &powers,
+                              const std::vector<G1_variable<ppT> > &precomputed_powers,
                               const G1_variable<ppT> &result,
                               const std::string &annotation_prefix);
+
+    G1_scalar_mul_gadget(protoboard<FieldT> &pb,
+                         const G1_variable<ppT> &identity,
+                         const pb_variable_array<FieldT> &scalars_i,
+                         const G1_variable<ppT> &base,
+                         const G1_variable<ppT> &result,
+                         const std::string &annotation_prefix);
     void generate_r1cs_constraints();
     void generate_r1cs_witness();
 };

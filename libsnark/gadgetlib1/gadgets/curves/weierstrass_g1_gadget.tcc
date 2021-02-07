@@ -325,12 +325,12 @@ template<typename ppT>
 G1_scalar_mul_gadget<ppT>::G1_scalar_mul_gadget(protoboard<FieldT> &pb,
                                               const G1_variable<ppT> &identity,
                                               const pb_variable_array<FieldT> &scalars_i,
-                                              const std::vector<G1_variable<ppT> > &powers,
+                                              const std::vector<G1_variable<ppT> > &precomputed_powers,
                                             const G1_variable<ppT>&result,
                                             const std::string &annotation_prefix) :
     gadget<FieldT>(pb, annotation_prefix), scalars(scalars_i), result(result), scalar_size(scalars_i.size())
     {
-        assert(scalar_size == powers.size());
+        assert(precomputed_powers.size() >= scalar_size);
         chosen_results.emplace_back(identity);
         for (size_t i = 0; i < scalar_size; ++i) {
             computed_results.emplace_back(G1_variable<ppT>(pb, FMT(annotation_prefix, " computed_results_%zu")));
@@ -340,14 +340,45 @@ G1_scalar_mul_gadget<ppT>::G1_scalar_mul_gadget(protoboard<FieldT> &pb,
                 chosen_results.emplace_back(result);
             }
 
-            adders.emplace_back(G1_add_gadget<ppT>(pb, chosen_results[i], powers[i], computed_results[i],
+            adders.emplace_back(G1_add_gadget<ppT>(pb, chosen_results[i], precomputed_powers[i], computed_results[i],
                                                    FMT(annotation_prefix, " adders_%zu")));
         }
 }
 
 template<typename ppT>
+G1_scalar_mul_gadget<ppT>::G1_scalar_mul_gadget(protoboard<FieldT> &pb,
+                                                const G1_variable<ppT> &identity,
+                                                const pb_variable_array<FieldT> &scalars_i,
+                                                const G1_variable<ppT> &base,
+const G1_variable<ppT>&result,
+const std::string &annotation_prefix) :
+gadget<FieldT>(pb, annotation_prefix), scalars(scalars_i), result(result), scalar_size(scalars_i.size())
+{
+    computed_powers.emplace_back(base);
+    for (size_t i = 0; i < scalar_size; i++) {
+        computed_powers.emplace_back(G1_variable<ppT>(pb, FMT(annotation_prefix, " times 2 to %zu", i)));
+        doublers.emplace_back(G1_dbl_gadget<ppT>(pb, computed_powers[i], computed_powers[i + 1], FMT(annotation_prefix, " double_%zu_to_2_to_%zu", i, i + 1)));
+    }
+    chosen_results.emplace_back(identity);
+    for (size_t i = 0; i < scalar_size; ++i) {
+        computed_results.emplace_back(G1_variable<ppT>(pb, FMT(annotation_prefix, " computed_results_%zu")));
+        if (i < scalar_size - 1) {
+            chosen_results.emplace_back(G1_variable<ppT>(pb, FMT(annotation_prefix, " chosen_results_%zu")));
+        } else {
+            chosen_results.emplace_back(result);
+        }
+
+        adders.emplace_back(G1_add_gadget<ppT>(pb, chosen_results[i], computed_powers[i], computed_results[i],
+                                               FMT(annotation_prefix, " adders_%zu")));
+    }
+}
+
+template<typename ppT>
 void G1_scalar_mul_gadget<ppT>::generate_r1cs_constraints()
 {
+    for (size_t i = 0; i < doublers.size(); i++) {
+        doublers[i].generate_r1cs_constraints();
+    }
     for (size_t i = 0; i < scalar_size; ++i)
     {
         adders[i].generate_r1cs_constraints();
@@ -419,6 +450,9 @@ void G1_scalar_mul_gadget<ppT>::generate_r1cs_constraints()
 template<typename ppT>
 void G1_scalar_mul_gadget<ppT>::generate_r1cs_witness()
 {
+    for (size_t i = 0; i < doublers.size(); i++) {
+        doublers[i].generate_r1cs_witness();
+    }
     for (size_t i = 0; i < scalar_size; ++i)
     {
         adders[i].generate_r1cs_witness();
