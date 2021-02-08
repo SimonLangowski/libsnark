@@ -323,7 +323,7 @@ void G1_multiscalar_mul_gadget<ppT>::generate_r1cs_witness()
 
 template<typename ppT>
 G1_scalar_mul_gadget<ppT>::G1_scalar_mul_gadget(protoboard<FieldT> &pb,
-                                              const G1_variable<ppT> &identity,
+                                              const G1_variable<ppT> &add_to,
                                               const pb_variable_array<FieldT> &scalars_i,
                                               const std::vector<G1_variable<ppT> > &precomputed_powers,
                                             const G1_variable<ppT>&result,
@@ -331,7 +331,7 @@ G1_scalar_mul_gadget<ppT>::G1_scalar_mul_gadget(protoboard<FieldT> &pb,
     gadget<FieldT>(pb, annotation_prefix), scalars(scalars_i), result(result), scalar_size(scalars_i.size())
     {
         assert(precomputed_powers.size() >= scalar_size);
-        chosen_results.emplace_back(identity);
+        chosen_results.emplace_back(add_to);
         for (size_t i = 0; i < scalar_size; ++i) {
             computed_results.emplace_back(G1_variable<ppT>(pb, FMT(annotation_prefix, " computed_results_%zu")));
             if (i < scalar_size - 1) {
@@ -347,7 +347,7 @@ G1_scalar_mul_gadget<ppT>::G1_scalar_mul_gadget(protoboard<FieldT> &pb,
 
 template<typename ppT>
 G1_scalar_mul_gadget<ppT>::G1_scalar_mul_gadget(protoboard<FieldT> &pb,
-                                                const G1_variable<ppT> &identity,
+                                                const G1_variable<ppT> &add_to,
                                                 const pb_variable_array<FieldT> &scalars_i,
                                                 const G1_variable<ppT> &base,
 const G1_variable<ppT>&result,
@@ -359,7 +359,7 @@ gadget<FieldT>(pb, annotation_prefix), scalars(scalars_i), result(result), scala
         computed_powers.emplace_back(G1_variable<ppT>(pb, FMT(annotation_prefix, " times 2 to %zu", i)));
         doublers.emplace_back(G1_dbl_gadget<ppT>(pb, computed_powers[i], computed_powers[i + 1], FMT(annotation_prefix, " double_%zu_to_2_to_%zu", i, i + 1)));
     }
-    chosen_results.emplace_back(identity);
+    chosen_results.emplace_back(add_to);
     for (size_t i = 0; i < scalar_size; ++i) {
         computed_results.emplace_back(G1_variable<ppT>(pb, FMT(annotation_prefix, " computed_results_%zu")));
         if (i < scalar_size - 1) {
