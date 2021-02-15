@@ -159,8 +159,8 @@ public:
     std::vector<G1_variable<ppT> > chosen_results;
     std::vector<G1_add_gadget<ppT> > adders;
 
-    const pb_variable_array<FieldT> &scalars;
-    const G1_variable<ppT> &result;
+    pb_variable_array<FieldT> scalars;
+    G1_variable<ppT> result;
 
     const size_t scalar_size;
 
