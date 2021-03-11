@@ -209,7 +209,13 @@ r1cs_gg_ppzksnark_verification_key<ppT> r1cs_gg_ppzksnark_verification_key<ppT>:
 }
 
 template <typename ppT>
-r1cs_gg_ppzksnark_keypair<ppT> r1cs_gg_ppzksnark_generator(const r1cs_gg_ppzksnark_constraint_system<ppT> &r1cs)
+r1cs_gg_ppzksnark_keypair<ppT> r1cs_gg_ppzksnark_generator(const r1cs_gg_ppzksnark_constraint_system<ppT> &r1cs,
+        /* Generate secret randomness as default arguments */
+        const libff::Fr<ppT> t,
+    const libff::Fr<ppT> alpha,
+    const libff::Fr<ppT> beta,
+    const libff::Fr<ppT> gamma,
+    const libff::Fr<ppT> delta)
 {
     libff::enter_block("Call to r1cs_gg_ppzksnark_generator");
 
@@ -217,12 +223,6 @@ r1cs_gg_ppzksnark_keypair<ppT> r1cs_gg_ppzksnark_generator(const r1cs_gg_ppzksna
     r1cs_gg_ppzksnark_constraint_system<ppT> r1cs_copy(r1cs);
     r1cs_copy.swap_AB_if_beneficial();
 
-    /* Generate secret randomness */
-    const libff::Fr<ppT> t = libff::Fr<ppT>::random_element();
-    const libff::Fr<ppT> alpha = libff::Fr<ppT>::random_element();
-    const libff::Fr<ppT> beta = libff::Fr<ppT>::random_element();
-    const libff::Fr<ppT> gamma = libff::Fr<ppT>::random_element();
-    const libff::Fr<ppT> delta = libff::Fr<ppT>::random_element();
     const libff::Fr<ppT> gamma_inverse = gamma.inverse();
     const libff::Fr<ppT> delta_inverse = delta.inverse();
 

@@ -360,7 +360,12 @@ public:
  * Given a R1CS constraint system CS, this algorithm produces proving and verification keys for CS.
  */
 template<typename ppT>
-r1cs_gg_ppzksnark_keypair<ppT> r1cs_gg_ppzksnark_generator(const r1cs_gg_ppzksnark_constraint_system<ppT> &cs);
+r1cs_gg_ppzksnark_keypair<ppT> r1cs_gg_ppzksnark_generator(const r1cs_gg_ppzksnark_constraint_system<ppT> &cs,
+        const libff::Fr<ppT> t = libff::Fr<ppT>::random_element(),
+                                                           const libff::Fr<ppT> alpha = libff::Fr<ppT>::random_element(),
+                                                           const libff::Fr<ppT> beta = libff::Fr<ppT>::random_element(),
+                                                           const libff::Fr<ppT> gamma = libff::Fr<ppT>::random_element(),
+                                                           const libff::Fr<ppT> delta = libff::Fr<ppT>::random_element());
 
 /**
  * A prover algorithm for the R1CS GG-ppzkSNARK.
