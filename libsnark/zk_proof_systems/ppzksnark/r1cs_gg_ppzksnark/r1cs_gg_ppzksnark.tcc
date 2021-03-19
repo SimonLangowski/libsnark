@@ -215,7 +215,10 @@ r1cs_gg_ppzksnark_keypair<ppT> r1cs_gg_ppzksnark_generator(const r1cs_gg_ppzksna
     const libff::Fr<ppT> alpha,
     const libff::Fr<ppT> beta,
     const libff::Fr<ppT> gamma,
-    const libff::Fr<ppT> delta)
+    const libff::Fr<ppT> delta,
+    const libff::G1<ppT> g1_generator,
+    const libff::G2<ppT> G2_gen
+    )
 {
     libff::enter_block("Call to r1cs_gg_ppzksnark_generator");
 
@@ -294,7 +297,6 @@ r1cs_gg_ppzksnark_keypair<ppT> r1cs_gg_ppzksnark_generator(const r1cs_gg_ppzksna
 #endif
 
     libff::enter_block("Generating G1 MSM window table");
-    const libff::G1<ppT> g1_generator = libff::G1<ppT>::random_element();
     const size_t g1_scalar_count = non_zero_At + non_zero_Bt + qap.num_variables();
     const size_t g1_scalar_size = libff::Fr<ppT>::size_in_bits();
     const size_t g1_window_size = libff::get_exp_window_size<libff::G1<ppT> >(g1_scalar_count);
@@ -304,7 +306,6 @@ r1cs_gg_ppzksnark_keypair<ppT> r1cs_gg_ppzksnark_generator(const r1cs_gg_ppzksna
     libff::leave_block("Generating G1 MSM window table");
 
     libff::enter_block("Generating G2 MSM window table");
-    const libff::G2<ppT> G2_gen = libff::G2<ppT>::random_element();
     const size_t g2_scalar_count = non_zero_Bt;
     const size_t g2_scalar_size = libff::Fr<ppT>::size_in_bits();
     size_t g2_window_size = libff::get_exp_window_size<libff::G2<ppT> >(g2_scalar_count);

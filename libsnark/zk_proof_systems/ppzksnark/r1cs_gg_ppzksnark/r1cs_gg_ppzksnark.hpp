@@ -361,11 +361,14 @@ public:
  */
 template<typename ppT>
 r1cs_gg_ppzksnark_keypair<ppT> r1cs_gg_ppzksnark_generator(const r1cs_gg_ppzksnark_constraint_system<ppT> &cs,
-        const libff::Fr<ppT> t = libff::Fr<ppT>::random_element(),
-                                                           const libff::Fr<ppT> alpha = libff::Fr<ppT>::random_element(),
-                                                           const libff::Fr<ppT> beta = libff::Fr<ppT>::random_element(),
-                                                           const libff::Fr<ppT> gamma = libff::Fr<ppT>::random_element(),
-                                                           const libff::Fr<ppT> delta = libff::Fr<ppT>::random_element());
+        libff::Fr<ppT> t = libff::Fr<ppT>::random_element(),
+       libff::Fr<ppT> alpha = libff::Fr<ppT>::random_element(),
+       libff::Fr<ppT> beta = libff::Fr<ppT>::random_element(),
+       libff::Fr<ppT> gamma = libff::Fr<ppT>::random_element(),
+       libff::Fr<ppT> delta = libff::Fr<ppT>::random_element(),
+       libff::G1<ppT> G1_gen = libff::G1<ppT>::random_element(),
+       libff::G2<ppT> G2_gen = libff::G2<ppT>::random_element()
+               );
 
 /**
  * A prover algorithm for the R1CS GG-ppzkSNARK.
